@@ -53,7 +53,10 @@ class Player extends Rect {
 class Pong {
     constructor(canvas) {
         this._canvas = canvas;
-        this._context = canvas.getContext('2d')
+        this._context = canvas.getContext('2d');
+
+        this._accumulator = 0;
+        this.step = 1/120;
 
         this.ball = new Ball;
 
@@ -72,6 +75,7 @@ class Pong {
         const callback = (milliseconds) => {
             if (lastTime) {
                 this.update((milliseconds - lastTime) / 1000);
+                this.draw();
             }
             lastTime = milliseconds;
         
@@ -118,7 +122,7 @@ class Pong {
                 const length = ball.vel.length;               
                 ball.vel.x = -ball.vel.x;
                 ball.vel.y += 300 * (Math.random() - .5);
-                ball.vel.length = length * 1.05;
+                ball.vel.length = length * 1.25;
             }
     }
     draw() {
@@ -160,7 +164,9 @@ class Pong {
             this.ball.vel.length = 200;
         }
     }
-    update(dt) {
+    simulate(dt) {
+        // console.log('Delta:',dt);
+
         // dt is delta time - movement of the ball is relative to the time difference of the update methods
         this.ball.pos.x += this.ball.vel.x * dt;
         this.ball.pos.y += this.ball.vel.y * dt;
@@ -168,6 +174,7 @@ class Pong {
         if (this.ball.left < 0 || this.ball.right > this._canvas.width) {
             //CONVERTS BOOL INTO INTEGER.
             const playerId = this.ball.vel.x < 0 | 0;
+            console.log('Score velocity:', this.ball.vel);
             this.players[playerId].score++;
             this.reset();
         }
@@ -177,10 +184,14 @@ class Pong {
 
         this.players[1].pos.y = this.ball.pos.y;
 
-        this.players.forEach(player => this.collide(player, this.ball));
-    
-        this.draw();
-        
+        this.players.forEach(player => this.collide(player, this.ball));        
+    }
+    update(dt) {
+        this._accumulator += dt;
+        while(this._accumulator > this.step) {
+            this.simulate(this.step);
+            this._accumulator -= this.step;
+        }
     }
 }
 
